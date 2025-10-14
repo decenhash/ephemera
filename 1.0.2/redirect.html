@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hash Redirector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 500;
+            font-size: 24px;
+        }
+        
+        .description {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .status.loading {
+            background-color: #e8f4fd;
+            color: #0066cc;
+        }
+        
+        .status.error {
+            background-color: #fde8e8;
+            color: #cc0000;
+        }
+        
+        .status.success {
+            background-color: #e8f8ef;
+            color: #008844;
+        }
+        
+        .json-preview {
+            background-color: #f5f5f5;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 15px 0;
+            text-align: left;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .redirect-info {
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .redirect-text {
+            color: #0066cc;
+        }
+        
+        .btn {
+            background-color: #22c55e;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            background-color: #16a34a;
+        }
+        
+        .btn:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hash-display {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .countdown {
+            color: #666;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hash Redirector</h1>
+        
+        <div class="description">
+            Enter a hash value in the URL to fetch and process the corresponding JSON file.
+        </div>
+        
+        <div class="status" id="status">
+            Add ?hash=value to the URL
+        </div>
+        
+        <div class="hash-display" id="hashDisplay"></div>
+        
+        <div class="json-preview" id="jsonPreview">
+            JSON content will appear here
+        </div>
+        
+        <div class="redirect-info" id="redirectInfo">
+            Redirect information will appear here
+        </div>
+        
+        <div class="countdown" id="countdown"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusEl = document.getElementById('status');
+            const jsonPreviewEl = document.getElementById('jsonPreview');
+            const redirectInfoEl = document.getElementById('redirectInfo');
+            const hashDisplayEl = document.getElementById('hashDisplay');
+            const countdownEl = document.getElementById('countdown');
+            
+            let redirectUrl = '';
+            let countdownTimer = null;
+            let countdownValue = 5;
+            
+            // Function to get URL parameters
+            function getUrlParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return {
+                    hash: urlParams.get('hash')
+                };
+            }
+            
+            // Function to set status message
+            function setStatus(message, type) {
+                statusEl.textContent = message;
+                statusEl.className = 'status ' + type;
+            }
+            
+            // Function to fetch JSON file from server
+            async function fetchJsonFile(hash) {
+                const response = await fetch(`json/${hash}.json`);
+                
+                if (!response.ok) {
+                    throw new Error('JSON file not found or empty');
+                }
+                
+                const jsonData = await response.json();
+                
+                // Check if JSON is empty
+                if (Object.keys(jsonData).length === 0) {
+                    throw new Error('JSON file is empty');
+                }
+                
+                return jsonData;
+            }
+            
+            // Function to perform redirect
+            function performRedirect() {
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                }
+            }
+            
+            // Function to start countdown
+            function startCountdown() {
+                updateCountdownDisplay();
+                
+                countdownTimer = setInterval(() => {
+                    countdownValue--;
+                    updateCountdownDisplay();
+                    
+                    if (countdownValue <= 0) {
+                        clearInterval(countdownTimer);
+                        performRedirect();
+                    }
+                }, 1000);
+            }
+            
+            // Function to update countdown display
+            function updateCountdownDisplay() {
+                countdownEl.textContent = `Redirecting automatically in ${countdownValue} seconds...`;
+            }
+            
+            // Function to create redirect button
+            function createRedirectButton() {
+                const button = document.createElement('button');
+                button.className = 'btn';
+                button.innerHTML = `<span class="redirect-text">Redirect to: ${redirectUrl}</span>`;
+                button.onclick = performRedirect;
+                
+                return button;
+            }
+            
+            // Main function to process the hash
+            async function processHash() {
+                const params = getUrlParams();
+                const hash = params.hash;
+                
+                if (!hash) {
+                    setStatus('No hash parameter provided', 'error');
+                    hashDisplayEl.textContent = '';
+                    jsonPreviewEl.textContent = 'JSON content will appear here';
+                    redirectInfoEl.textContent = 'Redirect information will appear here';
+                    countdownEl.textContent = '';
+                    return;
+                }
+                
+                hashDisplayEl.textContent = `Hash: ${hash}`;
+                setStatus(`Loading JSON file...`, 'loading');
+                jsonPreviewEl.textContent = 'Loading...';
+                redirectInfoEl.textContent = 'Determining redirect target...';
+                countdownEl.textContent = '';
+                
+                try {
+                    const jsonData = await fetchJsonFile(hash);
+                    
+                    // Display the JSON data
+                    jsonPreviewEl.textContent = JSON.stringify(jsonData, null, 2);
+                    
+                    // Determine redirect target
+                    if (jsonData.type) {
+                        redirectUrl = `files/${hash}.${jsonData.type}`;
+                    } else if (jsonData.url) {
+                        redirectUrl = jsonData.url;
+                    } else {
+                        throw new Error('No type or url field in JSON');
+                    }
+                    
+                    setStatus(`JSON loaded successfully`, 'success');
+                    
+                    // Clear previous content and add redirect button
+                    redirectInfoEl.innerHTML = '';
+                    redirectInfoEl.appendChild(createRedirectButton());
+                    
+                    // Start countdown for automatic redirect
+                    countdownValue = 5;
+                    startCountdown();
+                    
+                } catch (error) {
+                    setStatus(`Error: ${error.message}`, 'error');
+                    jsonPreviewEl.textContent = 'No JSON data available due to error.';
+                    redirectInfoEl.textContent = 'Cannot determine redirect target.';
+                    countdownEl.textContent = '';
+                }
+            }
+            
+            // Process hash on page load
+            processHash();
+        });
+    </script>
+</body>
+</html>
