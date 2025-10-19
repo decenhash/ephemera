@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Management Portal</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px;
+            background-color: #f8fafc;
+            line-height: 1.5;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        h1 {
+            color: #1e293b;
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        input[type="text"],
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1e293b;
+            background-color: #ffffff;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        input[type="text"]:focus,
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .btn {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s ease;
+        }
+        .btn:hover {
+            background-color: #1d4ed8;
+        }
+        .error {
+            color: #dc2626;
+            background-color: #fef2f2;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #fee2e2;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .success {
+            color: #15803d;
+            background-color: #f0fdf4;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #dcfce7;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .info-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 24px;
+            margin-top: 32px;
+        }
+        .info-box h3 {
+            color: #1e293b;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .info-box ul {
+            list-style: none;
+            padding: 0;
+            color: #475569;
+            font-size: 14px;
+        }
+        .info-box li {
+            margin-bottom: 8px;
+        }
+        a {
+            color: #2563eb;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        a:hover {
+            color: #1d4ed8;
+        }
+        .additional-fields {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .toggle-link {
+            color: #2563eb;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 12px;
+            display: inline-block;
+            transition: color 0.2s ease;
+        }
+        .toggle-link:hover {
+            color: #1d4ed8;
+        }
+        .search-section {
+            margin-top: 24px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1e293b;
+            background-color: #ffffff;
+            box-sizing: border-box;
+        }
+        .search-button {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: background-color 0.2s ease;
+        }
+        .search-button:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .results-section {
+            margin-top: 24px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            margin-bottom: 12px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border-left: 4px solid #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .result-link {
+            color: #1e293b;
+            font-weight: 500;
+            text-decoration: none;
+            flex-grow: 1;
+        }
+        .result-link:hover {
+            color: #2563eb;
+        }
+        .info-button {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+        }
+        .info-button:hover {
+            background-color: #1d4ed8;
+        }
+        .loading {
+            text-align: center;
+            padding: 24px;
+            color: #475569;
+            font-size: 14px;
+        }
+        .no-results {
+            text-align: center;
+            padding: 24px;
+            color: #475569;
+            background-color: #f8fafc;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Link Share</h1>
+        <div id="groupForm">
+            <form action="whats.php" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" name="title" id="title">
+                </div>
+                <div class="form-group">
+                    <label for="url">Link</label>
+                    <input type="url" name="url" id="url" required>
+                </div>
+                <span class="toggle-link" id="toggleMore">Show Additional Fields</span>
+                <div class="additional-fields" id="additionalFields">
+                    <div class="form-group">
+                        <label for="user">User</label>
+                        <input type="text" name="user" id="user">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <input type="text" name="description" id="description">
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <input type="text" name="category" id="category">
+                    </div>
+                    <div class="form-group">
+                        <label for="BTC">BTC Address</label>
+                        <input type="text" name="BTC" id="BTC">
+                    </div>
+                    <div class="form-group">
+                        <label for="SOL">SOL Address</label>
+                        <input type="text" name="SOL" id="SOL">
+                    </div>
+                    <div class="form-group">
+                        <label for="PIX">PIX Key</label>
+                        <input type="text" name="PIX" id="PIX">
+                    </div>
+                    <div class="form-group">
+                        <label for="PAYPAL">PayPal Address</label>
+                        <input type="text" name="PAYPAL" id="PAYPAL">
+                    </div>
+                </div>
+                <button type="submit" class="btn">Submit</button>
+            </form>
+        </div>
+        <div class="info-box">
+            <div class="search-section">
+                <h3>Search</h3>
+                <input type="text" class="search-input" placeholder="Enter at least 3 characters to search..." id="searchInput">
+                <button class="search-button" id="searchButton" disabled>Search</button>
+                <div class="results-section">
+                    <div id="resultsContainer">
+                        <!-- Results will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const toggleLink = document.getElementById('toggleMore');
+            const additionalFields = document.getElementById('additionalFields');
+
+            let showMoreFields = false;
+
+            toggleLink.addEventListener('click', function() {
+                showMoreFields = !showMoreFields;
+                additionalFields.style.display = showMoreFields ? 'block' : 'none';
+                toggleLink.textContent = showMoreFields ? 'Hide Additional Fields' : 'Show Additional Fields';
+            });
+
+            searchInput.addEventListener('input', function() {
+                searchButton.disabled = this.value.length < 3;
+            });
+
+            searchButton.addEventListener('click', performSearch);
+
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && this.value.length >= 3) {
+                    performSearch();
+                }
+            });
+
+            async function performSearch() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+
+                if (searchTerm.length < 3) return;
+
+                resultsContainer.innerHTML = '<div class="loading">Searching...</div>';
+                searchButton.disabled = true;
+
+                try {
+                    const response = await fetch(`json_search/${searchTerm}.json`);
+                    if (!response.ok) throw new Error('File not found');
+                    const text = await response.text();
+                    const data = parseJsonSafely(text);
+                    displayResults(data);
+                } catch (error) {
+                    console.error('Search error:', error);
+                    resultsContainer.innerHTML = error.message === 'File not found'
+                        ? `<div class="no-results">No results found for "${searchTerm}".</div>`
+                        : `<div class="message error">Error: ${error.message}</div>`;
+                } finally {
+                    searchButton.disabled = false;
+                }
+            }
+
+            function parseJsonSafely(text) {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.warn('Direct JSON parse failed, attempting to fix...', e);
+                    let fixedText = text.replace(/^\uFEFF/, '')
+                                       .replace(/,\s*([}\]])/g, '$1')
+                                       .replace(/[^\x20-\x7E\n\r\t]/g, '');
+                    const lastBraceIndex = fixedText.lastIndexOf('}');
+                    if (lastBraceIndex !== -1) {
+                        fixedText = fixedText.substring(0, lastBraceIndex + 1);
+                    }
+                    try {
+                        return JSON.parse(fixedText);
+                    } catch (e2) {
+                        const jsonMatches = fixedText.match(/\{[^{}]*\}/g);
+                        if (jsonMatches) {
+                            const validObjects = jsonMatches.map(match => {
+                                try {
+                                    const obj = JSON.parse(match);
+                                    return obj && typeof obj === 'object' ? obj : null;
+                                } catch {
+                                    return null;
+                                }
+                            }).filter(obj => obj && obj.title && obj.filename);
+                            if (validObjects.length > 0) return validObjects;
+                        }
+                        throw new Error('Invalid JSON format in search file');
+                    }
+                }
+            }
+
+            function displayResults(data) {
+                resultsContainer.innerHTML = '';
+                if (!data) {
+                    resultsContainer.innerHTML = '<div class="no-results">No valid data found.</div>';
+                    return;
+                }
+
+                let results = Array.isArray(data)
+                    ? data.filter(item => item && item.title && item.filename)
+                    : data.title && data.filename
+                        ? [data]
+                        : extractResultsFromObject(data);
+
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = '<div class="no-results">No valid results found.</div>';
+                    return;
+                }
+
+                results.forEach(result => createResultElement(result));
+            }
+
+            function extractResultsFromObject(obj) {
+                const results = [];
+                function extract(currentObj) {
+                    if (!currentObj || typeof currentObj !== 'object') return;
+                    if (currentObj.title && currentObj.filename) {
+                        results.push(currentObj);
+                    }
+                    Object.values(currentObj).forEach(value => {
+                        if (value && typeof value === 'object') {
+                            Array.isArray(value) ? value.forEach(item => extract(item)) : extract(value);
+                        }
+                    });
+                }
+                extract(obj);
+                return results;
+            }
+
+            function createResultElement(result) {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+
+                const titleLink = document.createElement('a');
+                titleLink.href = `redirect.html?hash=${encodeURIComponent(result.filename)}`;
+                titleLink.target = '_blank';
+                titleLink.className = 'result-link';
+                titleLink.textContent = result.title || 'Untitled';
+
+                const infoButton = document.createElement('button');
+                infoButton.className = 'info-button';
+                infoButton.textContent = 'Details';
+                infoButton.onclick = () => window.open(`json/${result.filename}.json`, '_blank');
+
+                resultItem.appendChild(titleLink);
+                resultItem.appendChild(infoButton);
+                resultsContainer.appendChild(resultItem);
+            }
+        });
+    </script>
+</body>
+</html>
