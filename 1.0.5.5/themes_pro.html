@@ -1,0 +1,453 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Hub</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #0d1117 0%, #1a1f2e 100%);
+            color: #00ff88;
+            text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+        }
+        .container {
+            background: rgba(13, 17, 23, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+            border: 1px solid #00ff88;
+        }
+        h1 {
+            color: #00ff88;
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #00ff88;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 8px;
+            text-shadow: 0 0 3px #00ff88;
+        }
+        input[type="text"],
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #00ff88;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #00ff88;
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: inset 0 0 5px rgba(0, 255, 136, 0.3);
+            transition: box-shadow 0.3s ease;
+        }
+        input[type="text"]:focus,
+        input[type="url"]:focus {
+            outline: none;
+            box-shadow: 0 0 10px #00ff88;
+            border-color: #00ffcc;
+        }
+        .btn {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            color: #0d1117;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            transition: box-shadow 0.3s ease, background 0.3s ease;
+        }
+        .btn:hover {
+            background: linear-gradient(45deg, #00cc66, #009944);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+        }
+        .error {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.2);
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ff4444;
+            font-size: 14px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 3px #ff4444;
+        }
+        .success {
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.2);
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #00ff88;
+            font-size: 14px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 3px #00ff88;
+        }
+        .info-box {
+            background: rgba(13, 17, 23, 0.8);
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            padding: 24px;
+            margin-top: 30px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        .info-box h3 {
+            color: #00ff88;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            text-shadow: 0 0 5px #00ff88;
+        }
+        .info-box ul {
+            list-style: none;
+            padding: 0;
+            color: #00cc66;
+            font-size: 14px;
+        }
+        .info-box li {
+            margin-bottom: 8px;
+        }
+        a {
+            color: #00ffcc;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        a:hover {
+            color: #00ff88;
+            text-shadow: 0 0 5px #00ff88;
+        }
+        .additional-fields {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed #00ff88;
+        }
+        .toggle-link {
+            color: #00ffcc;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 12px;
+            display: inline-block;
+            text-decoration: underline;
+            transition: color 0.3s ease;
+        }
+        .toggle-link:hover {
+            color: #00ff88;
+            text-shadow: 0 0 5px #00ff88;
+        }
+        .search-section {
+            margin-top: 24px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #00ff88;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #00ff88;
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: inset 0 0 5px rgba(0, 255, 136, 0.3);
+        }
+        .search-button {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            color: #0d1117;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 12px;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            transition: box-shadow 0.3s ease;
+        }
+        .search-button:disabled {
+            background: #333333;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .results-section {
+            margin-top: 24px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: rgba(13, 17, 23, 0.9);
+            border-radius: 6px;
+            border-left: 4px solid #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+        .result-link {
+            color: #00ffcc;
+            font-weight: bold;
+            text-decoration: none;
+            flex-grow: 1;
+        }
+        .result-link:hover {
+            color: #00ff88;
+            text-shadow: 0 0 5px #00ff88;
+        }
+        .info-button {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            color: #0d1117;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+            transition: box-shadow 0.3s ease;
+        }
+        .info-button:hover {
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+        }
+        .loading {
+            text-align: center;
+            padding: 24px;
+            color: #00cc66;
+            font-size: 14px;
+            text-shadow: 0 0 3px #00cc66;
+        }
+        .no-results {
+            text-align: center;
+            padding: 24px;
+            color: #00cc66;
+            background: rgba(13, 17, 23, 0.8);
+            border-radius: 6px;
+            font-size: 14px;
+            text-shadow: 0 0 3px #00cc66;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LinkHub</h1>
+        <div id="groupForm">
+            <form action="whats.php" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="title">Node Name</label>
+                    <input type="text" name="title" id="title">
+                </div>
+                <div class="form-group">
+                    <label for="url">Access Link</label>
+                    <input type="url" name="url" id="url" required>
+                </div>
+                <span class="toggle-link" id="toggleMore">+ Expand Data Fields</span>
+                <div class="additional-fields" id="additionalFields">
+                    <div class="form-group">
+                        <label for="user">Operator</label>
+                        <input type="text" name="user" id="user">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Node Description</label>
+                        <input type="text" name="description" id="description">
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Sector</label>
+                        <input type="text" name="category" id="category">
+                    </div>
+                    <div class="form-group">
+                        <label for="BTC">BTC Address</label>
+                        <input type="text" name="BTC" id="BTC">
+                    </div>
+                    <div class="form-group">
+                        <label for="SOL">SOL Address</label>
+                        <input type="text" name="SOL" id="SOL">
+                    </div>
+                    <div class="form-group">
+                        <label for="PIX">PIX Key</label>
+                        <input type="text" name="PIX" id="PIX">
+                    </div>
+                    <div class="form-group">
+                        <label for="PAYPAL">PayPal Address</label>
+                        <input type="text" name="PAYPAL" id="PAYPAL">
+                    </div>
+                </div>
+                <button type="submit" class="btn">Upload to Network</button>
+            </form>
+        </div>
+        <div class="info-box">
+            <div class="search-section">
+                <h3>Scan Network</h3>
+                <input type="text" class="search-input" placeholder="Input 3+ chars to initiate scan..." id="searchInput">
+                <button class="search-button" id="searchButton" disabled>Execute Scan</button>
+                <div class="results-section">
+                    <div id="resultsContainer">
+                        <!-- Scan results will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const toggleLink = document.getElementById('toggleMore');
+            const additionalFields = document.getElementById('additionalFields');
+
+            let showMoreFields = false;
+
+            toggleLink.addEventListener('click', function() {
+                showMoreFields = !showMoreFields;
+                additionalFields.style.display = showMoreFields ? 'block' : 'none';
+                toggleLink.textContent = showMoreFields ? '- Collapse Data Fields' : '+ Expand Data Fields';
+            });
+
+            searchInput.addEventListener('input', function() {
+                searchButton.disabled = this.value.length < 3;
+            });
+
+            searchButton.addEventListener('click', performSearch);
+
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && this.value.length >= 3) {
+                    performSearch();
+                }
+            });
+
+            async function performSearch() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+
+                if (searchTerm.length < 3) return;
+
+                resultsContainer.innerHTML = '<div class="loading">Initiating network scan...</div>';
+                searchButton.disabled = true;
+
+                try {
+                    const response = await fetch(`json_search/${searchTerm}.json`);
+                    if (!response.ok) throw new Error('File not found');
+                    const text = await response.text();
+                    const data = parseJsonSafely(text);
+                    displayResults(data);
+                } catch (error) {
+                    console.error('Scan error:', error);
+                    resultsContainer.innerHTML = error.message === 'File not found'
+                        ? `<div class="no-results">No nodes found for "${searchTerm}".</div>`
+                        : `<div class="message error">Error: ${error.message}</div>`;
+                } finally {
+                    searchButton.disabled = false;
+                }
+            }
+
+            function parseJsonSafely(text) {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.warn('JSON parse failed, attempting data recovery...', e);
+                    let fixedText = text.replace(/^\uFEFF/, '')
+                                       .replace(/,\s*([}\]])/g, '$1')
+                                       .replace(/[^\x20-\x7E\n\r\t]/g, '');
+                    const lastBraceIndex = fixedText.lastIndexOf('}');
+                    if (lastBraceIndex !== -1) {
+                        fixedText = fixedText.substring(0, lastBraceIndex + 1);
+                    }
+                    try {
+                        return JSON.parse(fixedText);
+                    } catch (e2) {
+                        const jsonMatches = fixedText.match(/\{[^{}]*\}/g);
+                        if (jsonMatches) {
+                            const validObjects = jsonMatches.map(match => {
+                                try {
+                                    const obj = JSON.parse(match);
+                                    return obj && typeof obj === 'object' ? obj : null;
+                                } catch {
+                                    return null;
+                                }
+                            }).filter(obj => obj && obj.title && obj.filename);
+                            if (validObjects.length > 0) return validObjects;
+                        }
+                        throw new Error('Corrupted data stream detected');
+                    }
+                }
+            }
+
+            function displayResults(data) {
+                resultsContainer.innerHTML = '';
+                if (!data) {
+                    resultsContainer.innerHTML = '<div class="no-results">No valid data detected.</div>';
+                    return;
+                }
+
+                let results = Array.isArray(data)
+                    ? data.filter(item => item && item.title && item.filename)
+                    : data.title && data.filename
+                        ? [data]
+                        : extractResultsFromObject(data);
+
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = '<div class="no-results">No valid nodes found.</div>';
+                    return;
+                }
+
+                results.forEach(result => createResultElement(result));
+            }
+
+            function extractResultsFromObject(obj) {
+                const results = [];
+                function extract(currentObj) {
+                    if (!currentObj || typeof currentObj !== 'object') return;
+                    if (currentObj.title && currentObj.filename) {
+                        results.push(currentObj);
+                    }
+                    Object.values(currentObj).forEach(value => {
+                        if (value && typeof value === 'object') {
+                            Array.isArray(value) ? value.forEach(item => extract(item)) : extract(value);
+                        }
+                    });
+                }
+                extract(obj);
+                return results;
+            }
+
+            function createResultElement(result) {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+
+                const titleLink = document.createElement('a');
+                titleLink.href = `redirect.php?hash=${encodeURIComponent(result.filename)}`;
+                titleLink.target = '_blank';
+                titleLink.className = 'result-link';
+                titleLink.textContent = result.title || 'Unnamed Node';
+
+                const infoButton = document.createElement('button');
+                infoButton.className = 'info-button';
+                infoButton.textContent = 'Access Data';
+                infoButton.onclick = () => window.open(`json/${result.filename}.json`, '_blank');
+
+                resultItem.appendChild(titleLink);
+                resultItem.appendChild(infoButton);
+                resultsContainer.appendChild(resultItem);
+            }
+        });
+    </script>
+</body>
+</html>
