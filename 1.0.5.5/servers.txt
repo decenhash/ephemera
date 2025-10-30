@@ -1,2 +1,0 @@
-http://localhost/files.php
-http://localhost/files.html
