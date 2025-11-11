@@ -1,0 +1,898 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="logo.jpg">
+    <title>Ephemera1.0.6 (Minimal)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            padding-top: 70px; 
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #25D366;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"], input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus, input[type="url"]:focus {
+            outline: none;
+            border-color: #25D366;
+            box-shadow: 0 0 5px rgba(37, 211, 102, 0.3);
+        }
+        .btn {
+            background-color: #25D366;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn:hover {
+            background-color: #1da851;
+        }
+        .error {
+            color: #ff4444;
+            background-color: #ffeaea;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ffcccc;
+        }
+        .success {
+            color: #25D366;
+            background-color: #e8f5e8;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #c8e6c9;
+        }
+        a {
+            color: #666;
+            text-decoration: none; 
+        }
+        
+        /* Additional fields styling */
+        .additional-fields {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #ddd;
+        }
+        
+        .toggle-link {
+            color: #25D366;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        /* --- TOP MENU STYLES --- */
+        .top-menu-bar {
+            background-color: #004a99; /* Blue background */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .top-menu-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            max-width: 1200px; /* Aligns with .container */
+            margin: 0 auto;
+        }
+        
+        .top-menu-content #searchInput {
+            flex-grow: 1; 
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .menu-buttons {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0; 
+        }
+
+        .menu-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+        }
+        
+        #searchButton {
+            background-color: #007bff; /* Blue */
+        }
+        #searchButton:hover {
+            background-color: #0056b3;
+        }
+        #searchButton:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #openModalBtn {
+            background-color: #6c757d; /* Gray */
+        }
+        #openModalBtn:hover {
+            background-color: #5a6268;
+        }
+
+        /* --- MODAL STYLES (Insert and Info) --- */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 2000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.5); 
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px; 
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .close-btn {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+        }
+
+        /* --- REMOVED: Styles for formatted Info Modal --- */
+        /* .info-item, .info-item strong, .info-item span removed */
+
+        /* --- NEW: Styles for Info Modal Table --- */
+        #infoModalContent {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .modal-info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .modal-info-table td {
+            padding: 10px 8px;
+            border: 1px solid #eee;
+            vertical-align: top;
+            word-wrap: break-word; /* For long values */
+        }
+        .modal-info-table .info-table-key {
+            background-color: #f9f9f9;
+            font-weight: bold;
+            color: #333;
+            width: 30%; /* Give keys a consistent width */
+            text-transform: capitalize;
+        }
+        .modal-info-table .info-table-value {
+            color: #555;
+        }
+
+
+        /* --- NEW: Welcome Message Style --- */
+        #welcomeMessage {
+            text-align: center;
+            padding: 40px 20px;
+            color: #555;
+            border-bottom: 1px dashed #ddd;
+            margin-bottom: 20px;
+        }
+        #welcomeMessage h1 {
+            color: #444;
+            margin-top: 0;
+        }
+        #welcomeMessage p {
+            font-size: 1.1em;
+            color: #666;
+        }
+
+        /* --- SEARCH RESULTS STYLING --- */
+        .search-section {
+            margin-top: 20px;
+        }
+        
+        .results-section {
+            margin-top: 20px;
+            min-height: 200px; 
+        }
+        
+        .result-link {
+            background-color: #25D366;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .result-link:hover {
+            background-color: #1da851;
+        }
+        
+        /* --- NEW: Comment Link Style --- */
+        .comment-link {
+            background-color: #007bff; /* Blue */
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .comment-link:hover {
+            background-color: #0056b3;
+        }
+        
+        .info-button {
+            background-color: #6c757d; /* Gray */
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .info-button:hover {
+            background-color: #5a6268;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+        }
+
+        /* --- MODIFIED: Results Table Styles --- */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden; /* Keeps border-radius on table */
+        }
+        
+        .results-table th, 
+        .results-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .results-table thead th {
+            background-color: #f9f9f9;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .results-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .results-table tbody tr:hover {
+            background-color: #fdfdfd;
+        }
+
+        /* --- REMOVED: Image Cell Styles --- */
+        /* .result-image-cell, .result-image removed */
+
+        .result-title-cell {
+            font-weight: bold;
+            color: #222;
+            font-size: 1.1em;
+        }
+
+        /* --- MODIFIED: Actions Cell Width --- */
+        .result-actions-cell {
+            width: 280px; /* Increased width for 3 buttons */
+        }
+        
+        .result-actions-wrapper {
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+
+        /* --- Pagination Styles --- */
+        .pagination-controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .prev-btn, .next-btn {
+            background-color: #6c757d; /* Gray */
+            display: none;
+        }
+        .prev-btn:hover, .next-btn:hover {
+            background-color: #5a6268;
+        }
+        .prev-btn:disabled, .next-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            color: #888;
+        }
+        .ephemera-link {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="top-menu-bar">
+        <div class="top-menu-content">
+            <a href="index.php" class="ephemera-link">Ephemera</a> <input type="text" class="search-input" placeholder="Enter at least 3 characters to search..." id="searchInput">
+            
+            <div class="menu-buttons">
+                <button class="menu-btn" id="searchButton" disabled>Search</button>
+                <button class="menu-btn" id="openModalBtn">Insert</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="insertModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeInsertModalBtn">&times;</span>
+            <div id="groupForm">
+                <h2>Insert</h2>
+                <form action="index.php" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Title: <input type="text" name="title"></label>
+                    </div>
+                    <div class="form-group">
+                        <label>URL: <input type="url" name="url" required></label>
+                    </div>
+                    <button type="submit" class="btn">Save</button>
+                    <span class="toggle-link" id="toggleMore">+ Show more fields</span>
+                    <div class="additional-fields" id="additionalFields">
+                        <div class="form-group">
+                            <label>User: <input type="text" name="user"></label>
+                        </div>
+                        <div class="form-group">
+                            <label>Description: <input type="text" name="description"></label>
+                        </div>
+                        <div class="form-group">
+                            <label>Category: <input type="text" name="category"></label>
+                        </div>
+                        <div class="form-group">
+                            <label>BTC: <input type="text" name="BTC"></label>
+                        </div>
+                        <div class="form-group">
+                            <label>SOL: <input type="text" name="SOL"></label>
+                        </div>
+                        <div class="form-group">
+                            <label>PIX: <input type="text" name="PIX"></label>
+                        </div>
+                        <div class="form-group">
+                            <label>PAYPAL: <input type="text" name="PAYPAL"></label>
+                        </div>
+                        <div class="form-group">
+                           <label>File (max 10MB): <input type="file" name="file"></label>
+                        </div>
+                    </div> 
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeInfoModalBtn">&times;</span>
+            <h2>Information</h2>
+            <div id="infoModalContent">Loading...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <div id="welcomeMessage">
+            <h1>Ephemera 1.0.6</h1>
+
+            <i>Feed your site with PHP and have a static version ready</i>
+
+            <br><br>
+        <div align="left">
+            <li><b><a href="index.html">index.html</a></b> : Static page</li><br> 
+            <li><b><a href="files.php">files.php</a></b> : List all files</li><br>
+            <li><b><a href="rank_file.php">rank_file.php</a></b> : Rank of more clicked files</li><br> 
+            <li><b><a href="index_default.php">index_default.php</a></b> : Default theme</li><br> 
+            <li><b><a href="list_and_rename.php">list_and_rename.php</a></b> : Rename all files of 'tmp_files' folder (e.g: cat_1.jpg, cat_2.jpg ...) </li><br>
+            <li><b><a href="json_creator.php">json_creator.php</a></b> : Create the JSON files for search based in the files of 'tmp_files' folder. </li><br>
+            <li><b><a href="replicate.php">replicate.php</a></b> : Replicate one site using its 'files.php' page </li><br>
+            <li><b><a href="file_downloader.php">file_downloader.php</a></b> : Replicate one site using its 'files.txt' </li><br>
+            <li><b><a href="files_html.php">files_html.php</a> / <a href="files_txt.php">files_txt.php</a></b> : List all files and create a static page or text file </li><br> 
+            <li><b><a href="java/Server.java">Server.java</a> / <a href="java/Client.java">Client.java</a></b> : Download all files from a server using the port '12345' </li> 
+        </div> 
+        </div>
+
+        <?php endif; ?>
+
+        <div class="search-section">
+            <div class="results-section">
+                <div id="resultsContainer">
+                    </div>
+            </div>
+
+            <div class="pagination-controls">
+                <button class="menu-btn prev-btn" id="prevButton">Prev</button>
+                <button class="menu-btn next-btn" id="nextButton">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- MODAL SCRIPT (INSERT) ---
+            const insertModal = document.getElementById('insertModal');
+            const openInsertBtn = document.getElementById('openModalBtn');
+            const closeInsertBtn = document.getElementById('closeInsertModalBtn');
+
+            openInsertBtn.addEventListener('click', () => insertModal.style.display = 'block');
+            closeInsertBtn.addEventListener('click', () => insertModal.style.display = 'none');
+            
+            // --- MODAL SCRIPT (INFO) ---
+            const infoModal = document.getElementById('infoModal');
+            const closeInfoBtn = document.getElementById('closeInfoModalBtn');
+            const infoModalContent = document.getElementById('infoModalContent');
+
+            closeInfoBtn.addEventListener('click', () => infoModal.style.display = 'none');
+
+            // Close modals by clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target == insertModal) {
+                    insertModal.style.display = 'none';
+                }
+                if (event.target == infoModal) {
+                    infoModal.style.display = 'none';
+                }
+            });
+
+            // --- SEARCH & RESULTS SCRIPT ---
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const toggleLink = document.getElementById('toggleMore');
+            const additionalFields = document.getElementById('additionalFields');
+            const welcomeMessage = document.getElementById('welcomeMessage'); // Welcome message
+            
+            // --- Pagination Variables ---
+            const nextButton = document.getElementById('nextButton');
+            const prevButton = document.getElementById('prevButton'); // Prev button
+            let currentSearchBase = '';
+            let currentSearchCounter = 0;
+            
+            let showMoreFields = false;
+            
+            // Toggle additional fields
+            if (toggleLink) {
+                toggleLink.addEventListener('click', function() {
+                    showMoreFields = !showMoreFields;
+                    additionalFields.style.display = showMoreFields ? 'block' : 'none';
+                    toggleLink.textContent = showMoreFields ? '- Hide additional fields' : '+ Show more fields';
+                });
+            }
+
+            // Enable/disable search button
+            searchInput.addEventListener('input', function() {
+                searchButton.disabled = this.value.length < 3;
+            });
+
+            // --- EVENT LISTENERS ---
+            searchButton.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && this.value.length >= 3) {
+                    performSearch();
+                }
+            });
+            nextButton.addEventListener('click', performNextSearch);
+            prevButton.addEventListener('click', performPrevSearch); // Prev button listener
+
+            /**
+             * Performs a new search from the search bar.
+             * Resets the pagination counter.
+             */
+            function performSearch() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                if (searchTerm.length < 3) return;
+
+                // Reset pagination
+                currentSearchBase = searchTerm;
+                currentSearchCounter = 0;
+                
+                fetchAndDisplay(currentSearchBase);
+            }
+
+            /**
+             * Performs a search for the next page.
+             */
+            function performNextSearch() {
+                if (!currentSearchBase) return; 
+
+                currentSearchCounter++;
+                const nextSearchTerm = `${currentSearchBase}_${currentSearchCounter}`;
+                
+                fetchAndDisplay(nextSearchTerm);
+            }
+
+            /**
+             * Performs a search for the previous page.
+             */
+            function performPrevSearch() {
+                if (!currentSearchBase || currentSearchCounter === 0) return; // Can't go back
+
+                currentSearchCounter--;
+                
+                let searchTerm;
+                if (currentSearchCounter === 0) {
+                    searchTerm = currentSearchBase; // Back to base file
+                } else {
+                    searchTerm = `${currentSearchBase}_${currentSearchCounter}`;
+                }
+                
+                fetchAndDisplay(searchTerm);
+            }
+
+
+            /**
+             * Refactored function to fetch and display results.
+             * @param {string} searchTerm - The term to search for (e.g., "cat" or "cat_1")
+             */
+            function fetchAndDisplay(searchTerm) {
+                // NEW: Hide welcome message on search
+                if (welcomeMessage) {
+                    welcomeMessage.style.display = 'none';
+                }
+
+                // Show loading state and disable buttons
+                resultsContainer.innerHTML = '<div class="loading">Searching...</div>';
+                searchButton.disabled = true;
+                nextButton.disabled = true;
+                prevButton.disabled = true;
+
+                const searchFile = `json_search/${searchTerm}.json`;
+
+                fetch(searchFile)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('File not found');
+                        }
+                        return response.text(); 
+                    })
+                    .then(text => {
+                        console.log('Raw response:', text);
+                        const data = parseJsonSafely(text);
+                        displayResults(data);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        searchButton.disabled = false; // Re-enable search
+                        
+                        if (error.message === 'File not found') {
+                            resultsContainer.innerHTML = '<div class="no-results">No results found for "' + searchTerm + '".</div>';
+                            nextButton.style.display = 'none'; // No next file
+                            // Show 'Prev' if we are not on the base page
+                            prevButton.style.display = (currentSearchCounter > 0) ? 'inline-block' : 'none';
+                            prevButton.disabled = false;
+                        } else {
+                            resultsContainer.innerHTML = '<div class="message error">Error: ' + error.message + '</div>';
+                        }
+                    })
+                    .finally(() => {
+                        // Re-enable search button (moved to catch/displayResults)
+                    });
+            }
+
+            function parseJsonSafely(text) {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.warn('Direct JSON parse failed, attempting to fix...', e);
+                    let fixedText = text.replace(/^\uFEFF/, '');
+                    const lastBraceIndex = fixedText.lastIndexOf('}');
+                    if (lastBraceIndex !== -1) {
+                        fixedText = fixedText.substring(0, lastBraceIndex + 1);
+                    }
+                    fixedText = fixedText.replace(/,\s*([}\]])/g, '$1');
+                    fixedText = fixedText.replace(/[^\x20-\x7E\n\r\t]/g, '');
+                    console.log('Fixed text:', fixedText);
+                    try {
+                        return JSON.parse(fixedText);
+                    } catch (e2) {
+                        console.error('Could not fix JSON:', e2);
+                        const jsonMatches = fixedText.match(/\{[^{}]*\}/g);
+                        if (jsonMatches && jsonMatches.length > 0) {
+                            const validObjects = [];
+                            for (let match of jsonMatches) {
+                                try {
+                                    const obj = JSON.parse(match);
+                                    if (obj && typeof obj === 'object') {
+                                        validObjects.push(obj);
+                                    }
+                                } catch (e3) { /* continue */ }
+                            }
+                            if (validObjects.length > 0) return validObjects;
+                        }
+                        throw new Error('Invalid JSON format in search file');
+                    }
+                }
+            }
+
+            /**
+             * MODIFIED: Displays results in a table (no image column).
+             */
+            function displayResults(data) {
+                console.log('Displaying data:', data);
+                
+                resultsContainer.innerHTML = ''; // Clear previous results
+                searchButton.disabled = false; // Re-enable search button
+                
+                if (!data) {
+                    resultsContainer.innerHTML = '<div class="no-results">No valid data found.</div>';
+                    return;
+                }
+
+                let results = [];
+                if (Array.isArray(data)) {
+                    results = data.filter(item => item && item.title && item.filename);
+                } else if (typeof data === 'object') {
+                    if (data.title && data.filename) {
+                        results = [data];
+                    } else {
+                        results = extractResultsFromObject(data);
+                    }
+                }
+
+                // --- NEW Pagination Button Logic ---
+                nextButton.disabled = false;
+                prevButton.disabled = false;
+
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = '<div class="no-results">No valid results found.</div>';
+                    nextButton.style.display = 'none'; // No results, no next
+                    prevButton.style.display = (currentSearchCounter > 0) ? 'inline-block' : 'none';
+                } else {
+                    // NEW: Create table structure
+                    const table = document.createElement('table');
+                    table.className = 'results-table';
+
+                    // Create table header (NO Image column)
+                    const thead = document.createElement('thead');
+                    thead.innerHTML = `
+                        <tr>
+                            <th>Title</th>
+                            <th>Actions</th>
+                        </tr>
+                    `;
+                    table.appendChild(thead);
+
+                    // Create table body
+                    const tbody = document.createElement('tbody');
+                    results.forEach(result => {
+                        createResultElement(result, tbody); // Pass tbody as container
+                    });
+                    table.appendChild(tbody);
+                    
+                    resultsContainer.appendChild(table);
+
+                    // Results were found, show buttons
+                    nextButton.style.display = 'inline-block';
+                    // Show prev button if not on the first page
+                    prevButton.style.display = (currentSearchCounter > 0) ? 'inline-block' : 'none';
+                }
+            }
+
+            function extractResultsFromObject(obj) {
+                const results = [];
+                function extract(currentObj) {
+                    if (!currentObj || typeof currentObj !== 'object') return;
+                    if (currentObj.title && currentObj.filename) {
+                        results.push(currentObj);
+                    }
+                    Object.values(currentObj).forEach(value => {
+                        if (value && typeof value === 'object') {
+                            if (Array.isArray(value)) {
+                                value.forEach(item => extract(item));
+                            } else {
+                                extract(value);
+                            }
+                        }
+                    });
+                }
+                extract(obj);
+                return results;
+            }
+
+            /**
+             * MODIFIED: Creates a table row (<tr>) for a result (no image).
+             * @param {object} result - The result object
+             * @param {HTMLElement} container - The <tbody> element
+             */
+            function createResultElement(result, container) { // container is now <tbody>
+                const tr = document.createElement('tr'); // Create table row
+
+                // --- REMOVED: Image Cell ---
+                
+                // 1. Title Cell
+                const titleCell = document.createElement('td');
+                titleCell.className = 'result-title-cell';
+                titleCell.textContent = result.title || 'Untitled';
+                tr.appendChild(titleCell);
+
+                // 2. Actions Cell
+                const actionsCell = document.createElement('td');
+                actionsCell.className = 'result-actions-cell';
+                
+                // Wrapper for flex layout
+                const actionsWrapper = document.createElement('div');
+                actionsWrapper.className = 'result-actions-wrapper';
+
+                // Create Join Link
+                const joinLink = document.createElement('a');
+                joinLink.href = `redirect_url.html?hash=${encodeURIComponent(result.filename)}`;
+                joinLink.target = '_blank';
+                joinLink.className = 'result-link'; // Green button
+                joinLink.textContent = 'Join';
+
+                // Create Info Button
+                const infoButton = document.createElement('button');
+                infoButton.className = 'info-button'; // Gray button
+                infoButton.textContent = 'Info';
+                
+                // --- NEW: Create Comment Link ---
+                const commentLink = document.createElement('a');
+                commentLink.href = `comment.php?hash=${encodeURIComponent(result.filename)}`;
+                commentLink.target = '_blank';
+                commentLink.className = 'comment-link'; // Blue button
+                commentLink.textContent = 'Comment';
+
+
+                // --- MODIFIED: Info Button Click Logic (Builds Table) ---
+                infoButton.addEventListener('click', () => {
+                    infoModalContent.innerHTML = '<div class="loading">Loading...</div>';
+                    infoModal.style.display = 'block';
+
+                    fetch(`json/${result.filename}.json`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Could not load file.');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            infoModalContent.innerHTML = ''; // Clear loading
+
+                            // Create the table element
+                            const infoTable = document.createElement('table');
+                            infoTable.className = 'modal-info-table'; // New CSS class
+                            
+                            // Create table body
+                            const tableBody = document.createElement('tbody');
+                            
+                            for (const key in data) {
+                                if (data.hasOwnProperty(key)) {
+                                    const row = document.createElement('tr');
+                                    
+                                    // Key cell (header-like)
+                                    const keyCell = document.createElement('td');
+                                    keyCell.className = 'info-table-key';
+                                    keyCell.textContent = key.replace(/_/g, ' '); // Format key
+                                    
+                                    // Value cell
+                                    const valueCell = document.createElement('td');
+                                    valueCell.className = 'info-table-value';
+                                    valueCell.textContent = data[key] || 'N/A'; // Show N/A if empty
+                                    
+                                    row.appendChild(keyCell);
+                                    row.appendChild(valueCell);
+                                    tableBody.appendChild(row);
+                                }
+                            }
+                            
+                            infoTable.appendChild(tableBody);
+                            infoModalContent.appendChild(infoTable); // Add the complete table to the modal
+                        })
+                        .catch(error => {
+                            console.error('Error fetching info:', error);
+                            infoModalContent.innerHTML = `<div class="error">${error.message}</div>`;
+                        });
+                });
+                // --- End of Info Button Logic ---
+
+                actionsWrapper.appendChild(joinLink);
+                actionsWrapper.appendChild(infoButton);
+                actionsWrapper.appendChild(commentLink); // Add new link
+                
+                actionsCell.appendChild(actionsWrapper);
+                tr.appendChild(actionsCell);
+
+                // Append the row to the container (tbody)
+                container.appendChild(tr);
+            }
+            
+            // This function is no longer needed but harmless to keep
+            function checkImageExists(url, callback) {
+                const img = new Image();
+                img.onload = () => callback(true);
+                img.onerror = () => callback(false);
+                img.src = url;
+            }
+        });
+    </script>
+</body>
+</html>

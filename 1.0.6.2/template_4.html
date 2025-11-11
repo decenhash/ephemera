@@ -1,0 +1,210 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Search Viewer (both formats)</title>
+    <style>
+        body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px;background:#f5f5f5;color:#333}
+        .container{background:#fff;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+        h1{text-align:center;color:#2c3e50}
+        .input-group{margin-bottom:20px;text-align:center}
+        input[type=text]{padding:10px;width:300px;border:1px solid #ddd;border-radius:5px;font-size:16px}
+        button{padding:10px 20px;margin:5px;border:none;border-radius:5px;background:#3498db;color:#fff;font-size:16px;cursor:pointer}
+        button:hover{background:#2980b9}
+        button:disabled{background:#bdc3c7;cursor:not-allowed}
+        .result{margin-top:30px;padding:15px;border:1px solid #eee;border-radius:5px;background:#f9f9f9}
+        .result-item{margin-bottom:15px;padding:10px;border-bottom:1px solid #eee}
+        .result-item:last-child{border-bottom:none}
+        .title{font-weight:bold;margin-bottom:5px;color:#2c3e50}
+        .link{color:#3498db;text-decoration:none}
+        .link:hover{text-decoration:underline}
+        .navigation{text-align:center;margin-top:20px}
+        .status{text-align:center;margin-top:15px;color:#7f8c8d;font-style:italic}
+        .error{color:#e74c3c;text-align:center;margin:20px 0}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>JSON Search</h1>
+
+    <div class="input-group">
+        <input type="text" id="wordInput" placeholder="Enter a word...">
+        <button id="searchBtn">Search</button>
+    </div>
+
+    <div id="resultContainer"></div>
+
+    <div class="navigation" id="navButtons" style="display:none;">
+        <button id="prevBtn">Prev</button>
+        <button id="nextBtn">Next</button>
+    </div>
+
+    <div class="status" id="status"></div>
+</div>
+
+<script>
+    // ---------- State ----------
+    let base = '';
+    let idx  = 0;
+    let data = [];
+
+    // ---------- DOM ----------
+    const $ = id => document.getElementById(id);
+    const wordInput      = $('wordInput');
+    const searchBtn      = $('searchBtn');
+    const resultContainer= $('resultContainer');
+    const navButtons     = $('navButtons');
+    const prevBtn        = $('prevBtn');
+    const nextBtn        = $('nextBtn');
+    const status         = $('status');
+
+    // ---------- Events ----------
+    searchBtn.addEventListener('click', startSearch);
+    wordInput.addEventListener('keypress', e=>{ if(e.key==='Enter') startSearch(); });
+    prevBtn.addEventListener('click', goPrev);
+    nextBtn.addEventListener('click', goNext);
+
+    // ---------- Core ----------
+    function startSearch(){
+        const w = wordInput.value.trim().toLowerCase();
+        if(!w){ showError('Enter a word'); return; }
+
+        base = w; idx = 0;
+        loadFile(fileName());
+    }
+
+    function fileName(){
+        return idx===0 ? `json_search/${base}.json`
+                       : `json_search/${base}_${idx}.json`;
+    }
+
+    async function loadFile(fname){
+        clearResults();
+        showStatus(`Loading ${fname.replace('json_search/','')}...`);
+
+        try{
+            const resp = await fetch(fname);
+            if(!resp.ok){
+                if(resp.status===404 && idx>0){
+                    showError(`No more files – stopped at ${base}_${idx-1}.json`);
+                    idx--;
+                    updateNav();
+                }else{
+                    showError(`File not found: ${fname}`);
+                }
+                return;
+            }
+
+            const txt = await resp.text();
+
+            // ---- Try normal JSON array ----
+            try{
+                data = JSON.parse(txt);
+                if(!Array.isArray(data)) data = [data];
+            }
+            // ---- F‑back: comma‑separated objects ----
+            catch(err){
+                if(err.message.includes('after JSON')){
+                    data = parseCommaObjects(txt);
+                }else{
+                    throw err;   // real parse error
+                }
+            }
+
+            render();
+            updateNav();
+            hideStatus();
+        }catch(e){
+            showError(`Load error: ${e.message}`);
+        }
+    }
+
+    // ---------- Fallback parser ----------
+    function parseCommaObjects(txt){
+        // Remove surrounding whitespace & possible outer braces
+        txt = txt.trim();
+        if(txt.startsWith('{') && txt.endsWith('}')) txt = txt.slice(1,-1);
+        if(txt.startsWith('[') && txt.endsWith(']')) txt = txt.slice(1,-1);
+
+        // Split on "},{"
+        const parts = txt.split(/\}\s*,\s*\{/);
+
+        const result = [];
+        // first part may start after a '{'
+        let first = parts[0];
+        if(!first.startsWith('{')) first = '{' + first;
+        if(!first.endsWith('}'))   first += '}';
+        result.push(JSON.parse(first));
+
+        // middle parts
+        for(let i=1;i<parts.length-1;i++){
+            result.push(JSON.parse('{' + parts[i] + '}'));
+        }
+
+        // last part
+        if(parts.length>1){
+            let last = parts[parts.length-1];
+            if(!last.startsWith('{')) last = '{' + last;
+            if(!last.endsWith('}'))   last += '}';
+            result.push(JSON.parse(last));
+        }
+        return result;
+    }
+
+    // ---------- Render ----------
+    function render(){
+        resultContainer.innerHTML = '';
+        if(!data.length){
+            resultContainer.innerHTML = '<p>No data in file.</p>';
+            return;
+        }
+
+        data.forEach(it=>{
+            const div = document.createElement('div');
+            div.className = 'result-item';
+
+            const title = document.createElement('div');
+            title.className = 'title';
+            title.textContent = it.title || '—';
+
+            const a = document.createElement('a');
+            a.className = 'link';
+            a.href = `redirect.html?hash=${encodeURIComponent(it.filename)}`;
+            a.target = '_blank';
+            a.textContent = it.filename || '—';
+
+            div.appendChild(title);
+            div.appendChild(a);
+            resultContainer.appendChild(div);
+        });
+
+        const cur = idx===0 ? `${base}.json` : `${base}_${idx}.json`;
+        showStatus(`From ${cur} – ${data.length} item${data.length>1?'s':''}`);
+    }
+
+    // ---------- Navigation ----------
+    function goPrev(){
+        if(idx>0){ idx--; loadFile(fileName()); }
+    }
+    function goNext(){
+        idx++; loadFile(fileName());
+    }
+    function updateNav(){
+        navButtons.style.display = 'block';
+        prevBtn.disabled = idx===0;
+        // next always enabled – existence checked on load
+    }
+
+    // ---------- UI helpers ----------
+    function clearResults(){ resultContainer.innerHTML=''; hideStatus(); }
+    function showStatus(m){ status.textContent=m; status.style.color='#7f8c8d'; }
+    function hideStatus(){ status.textContent=''; }
+    function showError(m){
+        clearResults();
+        navButtons.style.display='none';
+        resultContainer.innerHTML=`<p class="error">${m}</p>`;
+    }
+</script>
+</body>
+</html>

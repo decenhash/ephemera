@@ -1,0 +1,207 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hash Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .message.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+            display: block;
+        }
+
+        .message.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #90caf9;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hash Search</h1>
+        <div class="search-form">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Enter text or SHA-256 hash..."
+                    autocomplete="off"
+                >
+            </div>
+            <button type="button" onclick="handleSearch()">Search</button>
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <script>
+        // SHA-256 hash function
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        // Check if string is valid SHA-256 hash
+        function isValidHash(str) {
+            return /^[a-fA-F0-9]{64}$/.test(str);
+        }
+
+        // Handle search
+        async function handleSearch() {
+            const searchInput = document.getElementById('searchInput').value.trim();
+            const messageEl = document.getElementById('message');
+            
+            // Clear previous message
+            messageEl.className = 'message';
+            messageEl.textContent = '';
+            
+            if (!searchInput) {
+                messageEl.className = 'message error';
+                messageEl.textContent = 'Please enter a search term or hash.';
+                return;
+            }
+
+            let hash;
+            
+            if (isValidHash(searchInput)) {
+                // Input is already a valid hash
+                hash = searchInput;
+            } else {
+                // Generate SHA-256 hash
+                hash = await sha256(searchInput);
+            }
+
+            // Check if file exists
+            const filePath = `data/${hash}/index.html`;
+            
+            try {
+                const response = await fetch(filePath, { method: 'HEAD' });
+                
+                if (response.ok) {
+                    // File exists, redirect
+                    window.location.href = filePath;
+                } else {
+                    // File doesn't exist
+                    messageEl.className = 'message error';
+                    messageEl.textContent = "File don't exists!";
+                }
+            } catch (error) {
+                // Network error or file doesn't exist
+                messageEl.className = 'message error';
+                messageEl.textContent = "File don't exists!";
+            }
+        }
+
+        // Allow Enter key to trigger search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+
+        // Check for search parameter on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchParam = urlParams.get('search');
+            
+            if (searchParam) {
+                document.getElementById('searchInput').value = searchParam;
+                handleSearch();
+            }
+        });
+    </script>
+</body>
+</html>

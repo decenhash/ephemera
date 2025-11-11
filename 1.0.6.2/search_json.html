@@ -1,0 +1,445 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Search with Next Page</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .search-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover:not(:disabled) {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .results-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 200px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #ecf0f1;
+            transition: background-color 0.2s;
+        }
+        
+        .result-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .result-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 16px;
+        }
+        
+        .result-link:hover {
+            text-decoration: underline;
+        }
+        
+        .info-button {
+            background-color: #2ecc71;
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+        
+        .info-button:hover {
+            background-color: #27ae60;
+        }
+        
+        .no-results, .message {
+            padding: 15px;
+            text-align: center;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        
+        .no-results {
+            background-color: #fff9e6;
+            color: #8a6d3b;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .message.error {
+            background-color: #fde8e8;
+            color: #a94442;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .next-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border: 1px solid #3498db;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .next-link:hover {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .next-link.disabled {
+            color: #bdc3c7;
+            border-color: #bdc3c7;
+            pointer-events: none;
+        }
+        
+        .current-file {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <h1>JSON Search</h1>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Enter search term (minimum 3 characters)">
+            <button id="searchButton" disabled>Search</button>
+        </div>
+        <div class="current-file" id="currentFile"></div>
+    </div>
+    
+    <div class="results-container" id="resultsContainer">
+        <div class="loading">Enter a search term to begin</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const currentFileElement = document.getElementById('currentFile');
+            
+            let currentSearchTerm = '';
+            let currentPage = 0;
+
+            // Enable/disable search button based on input length
+            searchInput.addEventListener('input', function() {
+                searchButton.disabled = this.value.length < 3;
+            });
+
+            // Search when button is clicked
+            searchButton.addEventListener('click', performSearch);
+
+            // Search when Enter key is pressed
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && this.value.length >= 3) {
+                    performSearch();
+                }
+            });
+
+            function performSearch() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                
+                if (searchTerm.length < 3) {
+                    return;
+                }
+
+                // Reset to first page for new search
+                currentSearchTerm = searchTerm;
+                currentPage = 0;
+                
+                // Show loading state
+                resultsContainer.innerHTML = '<div class="loading">Searching...</div>';
+                currentFileElement.textContent = '';
+                searchButton.disabled = true;
+
+                // Load the first JSON file
+                loadJsonFile(searchTerm, 0);
+            }
+
+            function loadNextPage() {
+                currentPage++;
+                resultsContainer.innerHTML = '<div class="loading">Loading next page...</div>';
+                loadJsonFile(currentSearchTerm, currentPage);
+            }
+
+            function loadJsonFile(searchTerm, page) {
+                // Construct the search file path
+                let searchFile;
+                if (page === 0) {
+                    searchFile = `json_search/${searchTerm}.json`;
+                } else {
+                    searchFile = `json_search/${searchTerm}_${page}.json`;
+                }
+
+                // Update current file display
+                currentFileElement.textContent = `Current file: ${searchFile}`;
+
+                fetch(searchFile)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('File not found');
+                        }
+                        return response.text(); // Get as text first to handle malformed JSON
+                    })
+                    .then(text => {
+                        console.log('Raw response:', text);
+                        const data = parseJsonSafely(text);
+                        displayResults(data, searchTerm, page);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        if (error.message === 'File not found') {
+                            if (page === 0) {
+                                resultsContainer.innerHTML = '<div class="no-results">No results found for "' + searchTerm + '".</div>';
+                            } else {
+                                resultsContainer.innerHTML = '<div class="message error">No more results available.</div>';
+                                // Reset to previous page since this one doesn't exist
+                                currentPage--;
+                            }
+                        } else {
+                            resultsContainer.innerHTML = '<div class="message error">Error: ' + error.message + '</div>';
+                        }
+                    })
+                    .finally(() => {
+                        searchButton.disabled = false;
+                    });
+            }
+
+            function parseJsonSafely(text) {
+                try {
+                    // First try to parse directly
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.warn('Direct JSON parse failed, attempting to fix...', e);
+                    
+                    // Try to fix common JSON issues
+                    let fixedText = text;
+                    
+                    // Remove BOM if present
+                    fixedText = fixedText.replace(/^\uFEFF/, '');
+                    
+                    // Remove extra content after the main JSON object
+                    const lastBraceIndex = fixedText.lastIndexOf('}');
+                    if (lastBraceIndex !== -1) {
+                        fixedText = fixedText.substring(0, lastBraceIndex + 1);
+                    }
+                    
+                    // Remove trailing commas before } or ]
+                    fixedText = fixedText.replace(/,\s*([}\]])/g, '$1');
+                    
+                    // Remove any non-printable characters except whitespace
+                    fixedText = fixedText.replace(/[^\x20-\x7E\n\r\t]/g, '');
+                    
+                    console.log('Fixed text:', fixedText);
+                    
+                    try {
+                        return JSON.parse(fixedText);
+                    } catch (e2) {
+                        console.error('Could not fix JSON:', e2);
+                        
+                        // Last resort: try to extract JSON objects using regex
+                        const jsonMatches = fixedText.match(/\{[^{}]*\}/g);
+                        if (jsonMatches && jsonMatches.length > 0) {
+                            console.log('Found potential JSON objects via regex:', jsonMatches);
+                            const validObjects = [];
+                            for (let match of jsonMatches) {
+                                try {
+                                    const obj = JSON.parse(match);
+                                    if (obj && typeof obj === 'object') {
+                                        validObjects.push(obj);
+                                    }
+                                } catch (e3) {
+                                    // Continue to next match
+                                }
+                            }
+                            if (validObjects.length > 0) {
+                                return validObjects;
+                            }
+                        }
+                        
+                        throw new Error('Invalid JSON format in search file');
+                    }
+                }
+            }
+
+            function displayResults(data, searchTerm, page) {
+                console.log('Displaying data:', data);
+                
+                resultsContainer.innerHTML = '';
+
+                if (!data) {
+                    resultsContainer.innerHTML = '<div class="no-results">No valid data found.</div>';
+                    return;
+                }
+
+                // Handle different data structures
+                let results = [];
+
+                if (Array.isArray(data)) {
+                    // If it's an array, use all items that have title and filename
+                    results = data.filter(item => item && item.title && item.filename);
+                } else if (typeof data === 'object') {
+                    // If it's a single object with title and filename
+                    if (data.title && data.filename) {
+                        results = [data];
+                    } else {
+                        // If it's an object containing multiple entries, extract them
+                        results = extractResultsFromObject(data);
+                    }
+                }
+
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = '<div class="no-results">No valid results found.</div>';
+                    return;
+                }
+
+                // Display all results
+                results.forEach(result => {
+                    createResultElement(result);
+                });
+
+                // Add next page link
+                const paginationDiv = document.createElement('div');
+                paginationDiv.className = 'pagination';
+                
+                const nextLink = document.createElement('a');
+                nextLink.href = '#';
+                nextLink.className = 'next-link';
+                nextLink.textContent = 'Next';
+                nextLink.onclick = function(e) {
+                    e.preventDefault();
+                    loadNextPage();
+                };
+                
+                paginationDiv.appendChild(nextLink);
+                resultsContainer.appendChild(paginationDiv);
+            }
+
+            function extractResultsFromObject(obj) {
+                const results = [];
+                
+                function extract(currentObj) {
+                    if (!currentObj || typeof currentObj !== 'object') return;
+                    
+                    // If current object has title and filename, add it to results
+                    if (currentObj.title && currentObj.filename) {
+                        results.push(currentObj);
+                    }
+                    
+                    // Recursively check all properties
+                    Object.values(currentObj).forEach(value => {
+                        if (value && typeof value === 'object') {
+                            if (Array.isArray(value)) {
+                                value.forEach(item => extract(item));
+                            } else {
+                                extract(value);
+                            }
+                        }
+                    });
+                }
+                
+                extract(obj);
+                return results;
+            }
+
+            function createResultElement(result) {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+
+                // Create title link
+                const titleLink = document.createElement('a');
+                titleLink.href = `redirect.php?hash=${encodeURIComponent(result.filename)}`;
+                titleLink.target = '_blank';
+                titleLink.className = 'result-link';
+                titleLink.textContent = result.title || 'Untitled';
+
+                // Create info button
+                const infoButton = document.createElement('button');
+                infoButton.className = 'info-button';
+                infoButton.textContent = 'info';
+                infoButton.onclick = function() {
+                    window.open(`json/${result.filename}.json`, '_blank');
+                };
+
+                resultItem.appendChild(titleLink);
+                resultItem.appendChild(infoButton);
+                resultsContainer.appendChild(resultItem);
+            }
+        });
+    </script>
+</body>
+</html>

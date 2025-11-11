@@ -1,0 +1,467 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Search with Thumbnails</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+            padding-top: 80px;
+        }
+        
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            padding: 15px 0;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .search-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        #searchInput {
+            flex: 1;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        #searchInput:focus {
+            border-color: #0078d4;
+        }
+        
+        #searchButton {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            background-color: #0078d4;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        #searchButton:hover {
+            background-color: #005a9c;
+        }
+        
+        .content {
+            padding: 20px 0;
+        }
+        
+        #results {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .result-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .result-link {
+            color: #0078d4;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .result-link:hover {
+            text-decoration: underline;
+        }
+        
+        .file-info {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .pagination-info {
+            text-align: center;
+            color: #666;
+            margin: 15px 0;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        #prevButton, #nextButton {
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        #prevButton:hover, #nextButton:hover {
+            background: #f5f5f5;
+        }
+        
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        
+        .error {
+            color: #d93025;
+            font-weight: 500;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 40px 0;
+        }
+        
+        /* Thumbnail styles */
+        .thumbnail-container {
+            margin-bottom: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .thumbnail {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .video-thumbnail {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .video-thumbnail::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            transition: background 0.2s;
+        }
+        
+        .video-thumbnail:hover::after {
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .video-thumbnail::before {
+            content: '▶';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            color: white;
+            font-size: 48px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .no-thumbnail {
+            width: 100%;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e9ecef;
+            color: #6c757d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for files (e.g., 'dog', 'cat')">
+                <button id="searchButton">Search</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container content">
+        <div id="results">
+            <div class="empty-state">
+                Enter a search term to find files
+            </div>
+        </div>
+
+        <div id="pagination-info" class="pagination-info"></div>
+        
+        <div class="nav-buttons">
+            <button id="prevButton" style="display: none;">Previous</button>
+            <button id="nextButton" style="display: none;">Next</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Global State ---
+        let baseWord = "";
+        let currentPage = 0;
+        let hasNextPage = false;
+
+        // --- DOM Elements ---
+        const searchInput = document.getElementById("searchInput");
+        const searchButton = document.getElementById("searchButton");
+        const resultsDiv = document.getElementById("results");
+        const prevButton = document.getElementById("prevButton");
+        const nextButton = document.getElementById("nextButton");
+        const paginationInfo = document.getElementById("pagination-info");
+
+        // --- Event Listeners ---
+        searchButton.addEventListener("click", startSearch);
+        prevButton.addEventListener("click", loadPrev);
+        nextButton.addEventListener("click", loadNext);
+        
+        searchInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                startSearch();
+            }
+        });
+
+        // --- Core Functions ---
+
+        function startSearch() {
+            const searchTerm = searchInput.value.trim();
+            if (!searchTerm) {
+                showError("Please enter a search term");
+                return;
+            }
+            
+            baseWord = searchTerm.toLowerCase();
+            currentPage = 0;
+            fetchData();
+        }
+
+        function loadPrev() {
+            if (!baseWord || currentPage <= 0) return;
+            currentPage--;
+            fetchData();
+        }
+
+        function loadNext() {
+            if (!baseWord) return;
+            currentPage++;
+            fetchData();
+        }
+
+        async function fetchData() {
+            const filename = currentPage === 0 ? 
+                `${baseWord}.json` : 
+                `${baseWord}_${currentPage}.json`;
+            const path = `json_search/${filename}`;
+
+            showLoading(filename);
+            hideNavigation();
+
+            try {
+                const response = await fetch(path);
+                
+                if (!response.ok) {
+                    throw new Error(`File not found (Status: ${response.status})`);
+                }
+
+                const rawText = await response.text();
+                let data = parseJSON(rawText);
+                
+                displayResults(data, filename);
+                await checkNextPage();
+                
+            } catch (error) {
+                console.error("Fetch error:", error);
+                
+                if (currentPage === 0) {
+                    showError(`Could not find files for "${baseWord}"`);
+                } else {
+                    currentPage--;
+                    hasNextPage = false;
+                    updateNavigation();
+                    paginationInfo.textContent = `No more results. Showing page ${currentPage + 1}`;
+                }
+            }
+        }
+
+        async function checkNextPage() {
+            const nextFilename = `${baseWord}_${currentPage + 1}.json`;
+            const nextPath = `json_search/${nextFilename}`;
+            
+            try {
+                const response = await fetch(nextPath, { method: 'HEAD' });
+                hasNextPage = response.ok;
+            } catch (error) {
+                hasNextPage = false;
+            }
+            
+            updateNavigation();
+        }
+
+        function updateNavigation() {
+            prevButton.style.display = (currentPage > 0) ? 'block' : 'none';
+            nextButton.style.display = hasNextPage ? 'block' : 'none';
+            
+            const pageNumber = currentPage + 1;
+            paginationInfo.textContent = `Page ${pageNumber}${hasNextPage ? '' : ' (Last page)'}`;
+        }
+
+        function parseJSON(rawText) {
+            try {
+                const trimmed = rawText.trim();
+                
+                if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                    return JSON.parse(trimmed);
+                }
+                
+                if (trimmed.includes('},{')) {
+                    return JSON.parse('[' + trimmed + ']');
+                }
+                
+                return JSON.parse(trimmed);
+            } catch (error) {
+                console.error("JSON parse failed:", error);
+                throw new Error("Could not parse data");
+            }
+        }
+
+        function displayResults(data, filename) {
+            const results = Array.isArray(data) ? data : [data];
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div class="empty-state">No results found</div>';
+                return;
+            }
+            
+            let resultsHTML = `<div class="file-info">Loaded from: ${filename} (${results.length} results)</div>`;
+            
+            results.forEach(item => {
+                if (item && item.title && item.filename) {
+                    const redirectUrl = `redirect.html?hash=${encodeURIComponent(item.filename)}`;
+                    const thumbnailHTML = generateThumbnailHTML(item);
+                    
+                    resultsHTML += `
+                        <div class="result-item">
+                            ${thumbnailHTML}
+                            <div class="result-title">${item.title}</div>
+                            <a href="${redirectUrl}" target="_blank" class="result-link">${item.filename}</a>
+                        </div>
+                    `;
+                }
+            });
+            
+            resultsDiv.innerHTML = resultsHTML;
+            
+            // Add event listeners for video thumbnails
+            document.querySelectorAll('.video-thumbnail').forEach(thumbnail => {
+                thumbnail.addEventListener('click', function() {
+                    const videoUrl = this.getAttribute('data-video-url');
+                    if (videoUrl) {
+                        window.open(videoUrl, '_blank');
+                    }
+                });
+            });
+        }
+
+        function generateThumbnailHTML(item) {
+            const thumbnailUrl = `files/${item.filename}.jpg`;
+            const filename = item.filename.toLowerCase();
+            
+            // Check if it's a video file to add video-specific styling
+            if (filename.endsWith('.mp4') || filename.endsWith('.avi') || filename.endsWith('.mov') || filename.endsWith('.wmv')) {
+                const videoUrl = item.URL || `videos/${item.filename}`;
+                return `
+                    <div class="thumbnail-container video-thumbnail" data-video-url="${videoUrl}">
+                        <img src="${thumbnailUrl}" alt="${item.title}" class="thumbnail" onerror="handleThumbnailError(this)">
+                    </div>
+                `;
+            }
+            
+            // For all other file types (images, documents, etc.)
+            return `
+                <div class="thumbnail-container">
+                    <img src="${thumbnailUrl}" alt="${item.title}" class="thumbnail" onerror="handleThumbnailError(this)">
+                </div>
+            `;
+        }
+
+        function handleThumbnailError(imgElement) {
+            imgElement.style.display = 'none';
+            const container = imgElement.parentNode;
+            container.innerHTML = '<div class="no-thumbnail">No preview available</div>';
+            
+            // Remove video thumbnail styling if it was a video
+            container.classList.remove('video-thumbnail');
+            container.removeAttribute('data-video-url');
+        }
+
+        function showLoading(filename) {
+            resultsDiv.innerHTML = `<div class="loading">Loading ${filename}...</div>`;
+        }
+
+        function showError(message) {
+            resultsDiv.innerHTML = `<div class="error">${message}</div>`;
+            hideNavigation();
+            paginationInfo.textContent = '';
+        }
+
+        function hideNavigation() {
+            prevButton.style.display = 'none';
+            nextButton.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

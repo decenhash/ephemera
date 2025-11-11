@@ -1,0 +1,364 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON File Search</title>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        h2 {
+            text-align: center;
+            color: #005a9c;
+        }
+        #search-container {
+            display: flex;
+            margin-bottom: 25px;
+        }
+        #searchInput {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ccc;
+            border-radius: 5px 0 0 5px;
+        }
+        #searchButton {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            background-color: #0078d4;
+            color: white;
+            cursor: pointer;
+            border-radius: 0 5px 5px 0;
+            transition: background-color 0.2s;
+        }
+        #searchButton:hover {
+            background-color: #005a9c;
+        }
+        #results {
+            border: 1px solid #ddd;
+            padding: 20px;
+            min-height: 120px;
+            background: #ffffff;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            word-wrap: break-word;
+        }
+        #results h3 {
+            margin-top: 0;
+            color: #0078d4;
+        }
+        #results a {
+            color: #006400;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        #results a:hover {
+            text-decoration: underline;
+        }
+        #results p.loading, #results p.error {
+            font-style: italic;
+        }
+        #results p.error {
+            color: #d93025;
+            font-weight: bold;
+        }
+        #nav-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        #prevButton, #nextButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        #prevButton:hover, #nextButton:hover {
+            background-color: #c7c7c7;
+        }
+        .result-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .pagination-info {
+            text-align: center;
+            margin: 10px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>File Search</h2>
+
+    <div id="search-container">
+        <input type="text" id="searchInput" placeholder="Enter a word (e.g., 'dog')">
+        <button id="searchButton">Search</button>
+    </div>
+
+    <h3>Results</h3>
+    <div id="results">
+        <p>Enter a word and click "Search" to load data.</p>
+    </div>
+
+    <div id="pagination-info" class="pagination-info"></div>
+    <div id="nav-buttons">
+        <button id="prevButton" style="display: none;">Prev</button>
+        <button id="nextButton" style="display: none;">Next</button>
+    </div>
+
+    <script>
+        // --- Global State ---
+        let baseWord = "";
+        let currentPage = 0; // 0 = base.json, 1 = base_1.json, 2 = base_2.json, etc.
+        let hasNextPage = false;
+
+        // --- DOM Elements ---
+        const searchInput = document.getElementById("searchInput");
+        const searchButton = document.getElementById("searchButton");
+        const resultsDiv = document.getElementById("results");
+        const prevButton = document.getElementById("prevButton");
+        const nextButton = document.getElementById("nextButton");
+        const paginationInfo = document.getElementById("pagination-info");
+
+        // --- Event Listeners ---
+        searchButton.addEventListener("click", startSearch);
+        prevButton.addEventListener("click", loadPrev);
+        nextButton.addEventListener("click", loadNext);
+        
+        searchInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                startSearch();
+            }
+        });
+
+        // --- Core Functions ---
+
+        /**
+         * Initiates a new search from the input field.
+         */
+        function startSearch() {
+            const searchTerm = searchInput.value;
+            if (!searchTerm) {
+                resultsDiv.innerHTML = "<p class='error'>Please enter a word to search.</p>";
+                return;
+            }
+            
+            baseWord = searchTerm.toLowerCase();
+            currentPage = 0; // Start with the first file (e.g., "cat.json")
+            fetchData();
+        }
+
+        /**
+         * Loads the previous JSON file
+         */
+        function loadPrev() {
+            if (!baseWord || currentPage <= 0) return;
+            currentPage--;
+            fetchData();
+        }
+
+        /**
+         * Loads the next JSON file
+         */
+        function loadNext() {
+            if (!baseWord) return;
+            currentPage++;
+            fetchData();
+        }
+
+        /**
+         * Fetches JSON data based on the current search term and page
+         */
+        async function fetchData() {
+            if (!baseWord) return;
+
+            // Construct the filename
+            // currentPage = 0 -> "cat.json"
+            // currentPage = 1 -> "cat_1.json"  
+            // currentPage = 2 -> "cat_2.json"
+            const filename = currentPage === 0 ? 
+                `${baseWord}.json` : 
+                `${baseWord}_${currentPage}.json`;
+            const path = `json_search/${filename}`;
+
+            // Show loading message
+            resultsDiv.innerHTML = `<p class="loading">Loading ${filename}...</p>`;
+            prevButton.style.display = 'none';
+            nextButton.style.display = 'none';
+            paginationInfo.textContent = '';
+
+            try {
+                const response = await fetch(path);
+                
+                if (!response.ok) {
+                    throw new Error(`File not found (Status: ${response.status})`);
+                }
+
+                // Get the raw text first
+                const rawText = await response.text();
+                
+                // Parse the JSON data
+                let data;
+                try {
+                    // First try to parse as standard JSON
+                    data = JSON.parse(rawText);
+                } catch (parseError) {
+                    // If that fails, try to handle your specific format
+                    console.log("Standard JSON parse failed, trying custom format...");
+                    data = parseCustomJSONFormat(rawText);
+                }
+                
+                // Display the results from this file
+                displayResults(data, filename);
+                
+                // Check if next page exists
+                await checkNextPage();
+                
+            } catch (error) {
+                console.error("Fetch error:", error);
+                
+                // If we get an error on page 0, show error
+                // If we get an error on page > 0, we've reached the end
+                if (currentPage === 0) {
+                    displayError(filename);
+                } else {
+                    // We've reached the end of pagination
+                    currentPage--; // Go back to the last valid page
+                    hasNextPage = false;
+                    updateNavigation();
+                    paginationInfo.textContent = `No more results. Showing page ${currentPage + 1}`;
+                }
+            }
+        }
+
+        /**
+         * Checks if the next page file exists
+         */
+        async function checkNextPage() {
+            const nextFilename = `${baseWord}_${currentPage + 1}.json`;
+            const nextPath = `json_search/${nextFilename}`;
+            
+            try {
+                const response = await fetch(nextPath, { method: 'HEAD' });
+                hasNextPage = response.ok;
+            } catch (error) {
+                hasNextPage = false;
+            }
+            
+            updateNavigation();
+        }
+
+        /**
+         * Updates the navigation buttons and pagination info
+         */
+        function updateNavigation() {
+            // Show Prev button if we're not on the first page
+            prevButton.style.display = (currentPage > 0) ? 'inline-block' : 'none';
+            
+            // Show Next button if next page exists
+            nextButton.style.display = hasNextPage ? 'inline-block' : 'none';
+            
+            // Update pagination info
+            const pageNumber = currentPage + 1;
+            paginationInfo.textContent = `Page ${pageNumber}${hasNextPage ? '' : ' (Last page)'}`;
+        }
+
+        /**
+         * Parses your custom JSON format where objects are separated by commas
+         * but not wrapped in an array
+         */
+        function parseCustomJSONFormat(rawText) {
+            try {
+                // Remove any whitespace and try to wrap in array brackets
+                const trimmed = rawText.trim();
+                
+                // If it already starts with [ and ends with ], it's a valid array
+                if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                    return JSON.parse(trimmed);
+                }
+                
+                // Otherwise, wrap multiple objects in array brackets
+                if (trimmed.includes('},{')) {
+                    return JSON.parse('[' + trimmed + ']');
+                }
+                
+                // For single object
+                return JSON.parse(trimmed);
+            } catch (error) {
+                console.error("Custom JSON parse failed:", error);
+                throw new Error("Could not parse JSON data");
+            }
+        }
+
+        /**
+         * Displays the results from the current JSON file
+         */
+        function displayResults(data, filename) {
+            // Convert data to array if it's not already
+            const results = Array.isArray(data) ? data : [data];
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = "<p>No results found in this file.</p>";
+                return;
+            }
+            
+            // Build results HTML
+            let resultsHTML = `<p style="font-size: 0.9em; color: #555;">
+                <em>Loaded from: ${filename} (${results.length} results)</em>
+            </p>`;
+            
+            results.forEach(item => {
+                // Check if item has the expected structure
+                if (item && item.title && item.filename) {
+                    // Construct the redirect URL
+                    const redirectUrl = `redirect.html?hash=${encodeURIComponent(item.filename)}`;
+                    
+                    resultsHTML += `
+                        <div class="result-item">
+                            <h3>${item.title}</h3>
+                            <a href="${redirectUrl}" target="_blank">Open File: ${item.filename}</a>
+                        </div>
+                    `;
+                } else {
+                    console.warn("Invalid item structure:", item);
+                }
+            });
+            
+            resultsDiv.innerHTML = resultsHTML;
+        }
+
+        /**
+         * Displays an error message
+         */
+        function displayError(filename) {
+            resultsDiv.innerHTML = `
+                <p class="error">
+                    <strong>Error:</strong> Could not load the file <strong>${filename}</strong>.
+                </p>
+                <p>It may not exist in the 'json_search' folder, or there was a network error.</p>
+            `;
+            
+            prevButton.style.display = 'none';
+            nextButton.display = 'none';
+            paginationInfo.textContent = '';
+        }
+    </script>
+
+</body>
+</html>
