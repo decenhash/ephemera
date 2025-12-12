@@ -1,0 +1,93 @@
+<h1>E2EPHEMERA</h1>
+
+    <h2>App Overview: The Decentralized Network Aggregator</h2>
+    <p>This application is a Java-based Desktop GUI tool designed to manage, analyze, and aggregate files across multiple remote servers. It acts as a federated client that connects to various web servers (domains) listed in a local text file to perform tasks like ranking file popularity, mirroring content, discovery of remote file lists, and searching for specific user data across the network.</p>
+    <p>It operates entirely without external dependencies, using standard HTTP protocols to "talk" to servers.</p>
+
+    <hr>
+
+    <h2>Core Features & How They Work</h2>
+
+    <h3>1. Rank (Analytics)</h3>
+    <ul>
+        <li><strong>What it does:</strong> Calculates which files are the most popular or most referenced in your input list.</li>
+        <li><strong>How it works:</strong> It reads your local <code>files.txt</code> line by line. It strips away the domain (e.g., <code>https://test.com/</code>) to focus only on the filename (e.g., <code>image.jpg</code>). It counts how many times each filename appears and displays a "Top 100" leaderboard.</li>
+        <li><strong>Utility:</strong> Useful for identifying trending content or finding duplicate assets spread across different servers.</li>
+    </ul>
+
+    <h3>2. Download (Asset Mirroring)</h3>
+    <ul>
+        <li><strong>What it does:</strong> Downloads the files listed in <code>files.txt</code> to your local machine, but with a "smart twin" feature.</li>
+        <li><strong>How it works:</strong>
+            <ol>
+                <li><strong>Direct Download:</strong> It downloads the URL found in the text file into a local files folder.</li>
+                <li><strong>JSON Twin Check:</strong> For every file (e.g., <code>photo.jpg</code>), it automatically assumes there might be a metadata file on the server in a specific <code>/json/</code> folder (e.g., <code>photo.json</code>). It checks if that metadata file exists, and if so, downloads it to a json folder.</li>
+            </ol>
+        </li>
+        <li><strong>Utility:</strong> Great for backing up media libraries where every media file has an associated data file (metadata) that needs to be preserved together.</li>
+    </ul>
+
+    <h3>3. Servers Download (Crawler/Discovery)</h3>
+    <ul>
+        <li><strong>What it does:</strong> This is a "discovery" mode. Instead of just downloading the specific URLs you have, it asks the servers for their list of files and downloads everything.</li>
+        <li><strong>How it works:</strong>
+            <ol>
+                <li>It extracts the unique domain names from your local list.</li>
+                <li>It attempts to download a <code>files.txt</code> from the root of those domains.</li>
+                <li>If successful, it parses that remote list and recursively performs the Download logic (including the "Twin JSON" check) for every file listed on the remote server.</li>
+            </ol>
+        </li>
+        <li><strong>Utility:</strong> Allows you to sync your local machine with the full contents of multiple remote servers without needing to know every specific URL beforehand.</li>
+    </ul>
+
+    <h3>4. Search (Data Aggregation)</h3>
+    <ul>
+        <li><strong>What it does:</strong> Searches across all known servers for a specific user's data file and consolidates the results into a single local database.</li>
+        <li><strong>How it works:</strong>
+            <ol>
+                <li>You type a username (e.g., "bob").</li>
+                <li>The app checks every domain in your list for a specific path: <code>/json_search/bob.json</code>.</li>
+                <li>If found, it downloads the content.</li>
+                <li><strong>Consolidation:</strong> It parses the downloaded data and appends unique entries into a master file locally (<code>json_search/bob.json</code>). It ensures no duplicate file hashes are recorded.</li>
+            </ol>
+        </li>
+        <li><strong>Utility:</strong> This creates a decentralized search engine. If "Bob" has data split across 5 different servers, this tool merges them into one complete profile on your computer.</li>
+    </ul>
+
+    <h3>5. View (Browser Interface)</h3>
+    <ul>
+        <li><strong>What it does:</strong> Allows you to browse the search results visually without downloading the files locally.</li>
+        <li><strong>How it works:</strong>
+            <ol>
+                <li>It performs the same network search as above.</li>
+                <li>Instead of saving the data, it parses the JSON results in memory.</li>
+                <li>It generates an HTML list of clickable links.</li>
+                <li><strong>Smart Redirection:</strong> The links don't point to the file directly; they point to a <code>redirect.html</code> script on the server, passing the file's hash as a parameter.</li>
+            </ol>
+        </li>
+        <li><strong>Utility:</strong> Turns the app into a web browser for your decentralized network, allowing you to access content on remote servers via a unified interface.</li>
+    </ul>
+
+    <hr>
+
+    <h2>Why is this Useful?</h2>
+    <ol>
+        <li><strong>Decentralization:</strong> This tool removes the need for a central "master server." As long as you have a list of domains, the client (this app) does the work of stitching the network together.</li>
+        <li><strong>Resilience:</strong> If one server goes down, the "Servers Download" and "Search" features allow you to easily find and retrieve content from other servers in your list.</li>
+        <li><strong>Data Integrity:</strong> The "Twin Check" (downloading JSON alongside media) ensures that you don't just get the image/file, but also the context or metadata associated with it.</li>
+        <li><strong>Efficiency:</strong> The app checks if a file exists locally before downloading, saving bandwidth. It also checks if a file exists remotely (using HTTP HEAD requests) before trying to download, preventing errors.</li>
+    </ol>
+
+    <hr>
+
+    <h2>Mental Model of the Architecture</h2>
+    <p>Imagine you have a library card (the app) and a list of library addresses (<code>files.txt</code>).</p>
+    <ul>
+        <li><strong>Rank:</strong> You look at your list and see which book titles appear at the most libraries.</li>
+        <li><strong>Download:</strong> You go to the libraries and borrow the specific books on your list, plus their index cards (JSON).</li>
+        <li><strong>Servers Download:</strong> You go to the front desk of each library, ask for their master catalog, and borrow everything in it.</li>
+        <li><strong>Search/View:</strong> You ask every library, "Do you have a folder for the author 'Bob'?" You then compile a master bibliography of Bob's work from every library combined.</li>
+    </ul>
+
+</body>
+</html>

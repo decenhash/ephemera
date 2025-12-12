@@ -1,0 +1,275 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hash Redirector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 28px;
+        }
+        
+        .description {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+            font-size: 15px;
+        }
+        
+        .status {
+            padding: 16px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            display: none;
+        }
+        
+        .status.success {
+            background-color: #e8f8ef;
+            color: #008844;
+            border: 1px solid #c8f0dc;
+            display: block;
+        }
+        
+        .redirect-info {
+            margin: 25px 0;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 15px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .redirect-info.active {
+            display: flex;
+        }
+        
+        .btn {
+            background-color: #22c55e;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background-color: #16a34a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-icon {
+            font-size: 18px;
+        }
+        
+        .countdown {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .success-icon {
+            font-size: 48px;
+            color: #22c55e;
+            margin-bottom: 15px;
+        }
+        
+        .hash-display {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+            display: none;
+        }
+        
+        .hash-display.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hash Redirector</h1>
+        
+        <div class="description">
+            Enter a hash value in the URL to fetch and process the corresponding JSON file.
+        </div>
+        
+        <div class="status" id="status">
+            JSON file loaded successfully
+        </div>
+        
+        <div class="hash-display" id="hashDisplay"></div>
+        
+        <div class="redirect-info" id="redirectInfo">
+            <div class="success-icon">✓</div>
+            <button class="btn" id="redirectBtn">
+                <span class="btn-icon">↗</span>
+                Open Directly
+            </button>
+            <div class="countdown" id="countdown"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusEl = document.getElementById('status');
+            const redirectInfoEl = document.getElementById('redirectInfo');
+            const hashDisplayEl = document.getElementById('hashDisplay');
+            const countdownEl = document.getElementById('countdown');
+            const redirectBtn = document.getElementById('redirectBtn');
+            
+            let redirectUrl = '';
+            let countdownTimer = null;
+            let countdownValue = 5;
+            
+            // Function to get URL parameters
+            function getUrlParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return {
+                    hash: urlParams.get('hash')
+                };
+            }
+            
+            // Function to fetch JSON file from server
+            async function fetchJsonFile(hash) {
+                const response = await fetch(`json/${hash}.json`);
+                
+                if (!response.ok) {
+                    throw new Error('JSON file not found or empty');
+                }
+                
+                const jsonData = await response.json();
+                
+                // Check if JSON is empty
+                if (Object.keys(jsonData).length === 0) {
+                    throw new Error('JSON file is empty');
+                }
+                
+                return jsonData;
+            }
+            
+            // Function to perform redirect
+            function performRedirect() {
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                }
+            }
+            
+            // Function to start countdown
+            function startCountdown() {
+                updateCountdownDisplay();
+                
+                countdownTimer = setInterval(() => {
+                    countdownValue--;
+                    updateCountdownDisplay();
+                    
+                    if (countdownValue <= 0) {
+                        clearInterval(countdownTimer);
+                        performRedirect();
+                    }
+                }, 1000);
+            }
+            
+            // Function to update countdown display
+            function updateCountdownDisplay() {
+                countdownEl.textContent = `Redirecting automatically in ${countdownValue} seconds...`;
+            }
+            
+            // Main function to process the hash
+            async function processHash() {
+                const params = getUrlParams();
+                const hash = params.hash;
+                
+                if (!hash) {
+                    // Hide all elements if no hash is provided
+                    statusEl.style.display = 'none';
+                    redirectInfoEl.style.display = 'none';
+                    hashDisplayEl.style.display = 'none';
+                    return;
+                }
+                
+                hashDisplayEl.textContent = `Hash: ${hash}`;
+                hashDisplayEl.classList.add('active');
+                
+                try {
+                    const jsonData = await fetchJsonFile(hash);
+                    
+                    // Determine redirect target
+                    if (jsonData.type) {
+                        redirectUrl = `files/${hash}.${jsonData.type}`;
+                    } else if (jsonData.url) {
+                        redirectUrl = jsonData.url;
+                    } else {
+                        throw new Error('No type or url field in JSON');
+                    }
+                    
+                    // Show success elements
+                    statusEl.classList.add('success');
+                    redirectInfoEl.classList.add('active');
+                    
+                    // Set up redirect button
+                    redirectBtn.onclick = performRedirect;
+                    
+                    // Start countdown for automatic redirect
+                    countdownValue = 5;
+                    startCountdown();
+                    
+                } catch (error) {
+                    // Hide all elements if there's an error
+                    statusEl.style.display = 'none';
+                    redirectInfoEl.style.display = 'none';
+                    hashDisplayEl.style.display = 'none';
+                }
+            }
+            
+            // Process hash on page load
+            processHash();
+        });
+    </script>
+</body>
+</html>
